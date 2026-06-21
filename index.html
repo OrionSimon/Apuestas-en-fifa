@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIFA Bets</title>
+<style>
+  *{box-sizing:border-box;font-family:-apple-system,system-ui,sans-serif}
+  body{margin:0;background:#0f1115;color:#eee;padding:16px;padding-bottom:90px}
+  h1{font-size:22px;margin:0 0 4px}
+  .sub{color:#888;font-size:13px;margin-bottom:12px}
+  .card{background:#1a1d24;border:1px solid #2a2e38;border-radius:12px;padding:14px;margin-bottom:10px}
+  select,input{width:100%;padding:10px;border-radius:8px;border:1px solid #333;background:#22262f;color:#eee;font-size:15px;margin-top:6px}
+  button{width:100%;padding:10px;border-radius:8px;border:none;background:#3a6df0;color:#eee;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px}
+  button.sec{background:#333}
+  button.danger{background:#c0392b}
+  label{font-size:13px;color:#aaa;display:block;margin-top:10px}
+  .balances{display:flex;gap:8px;margin-bottom:14px}
+  .bal{flex:1;background:#1a1d24;border-radius:10px;padding:12px;text-align:center;border:1px solid #2a2e38}
+  .bal.active{border-color:#3a6df0}
+  .bal .name{font-size:12px;color:#aaa}
+  .bal .amt{font-size:18px;font-weight:700;margin-top:3px}
+  .tabs{display:flex;gap:6px;margin-bottom:14px}
+  .tabs button{flex:1;padding:8px;font-size:13px;margin-top:0}
+  .tabs button.active{background:#3a6df0}
+  .tabs button:not(.active){background:#22262f}
+  .hidden{display:none}
+  h3{margin:0 0 4px;font-size:15px}
+  h4{margin:0 0 2px;font-size:13px;font-weight:600;color:#eee}
+  .note{font-size:11px;color:#555;margin-bottom:6px}
+  .small{font-size:12px;color:#888;margin-top:6px}
+  .group-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#444;margin:14px 0 6px}
+  .outcomes{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap}
+  .ob{flex:1;min-width:74px;background:#22262f;border:1.5px solid #2a2e38;border-radius:10px;padding:10px 5px;text-align:center;cursor:pointer;transition:.15s}
+  .ob .lbl{font-size:11px;color:#bbb;display:block;line-height:1.3}
+  .ob .odd{font-size:17px;font-weight:700;color:#3a6df0;display:block;margin-top:3px}
+  .ob.sel{border-color:#3a6df0;background:#1c2740}
+  .ob.sel .lbl{color:#dde}
+  /* betbar */
+  .betbar{position:fixed;bottom:0;left:0;right:0;background:#14161c;border-top:1px solid #2a2e38;padding:12px 16px;z-index:100}
+  .betbar-row{display:flex;gap:8px;align-items:center}
+  .betbar-row input{margin-top:0;flex:1}
+  .betbar-row button{width:auto;white-space:nowrap;margin-top:0;padding:10px 16px}
+  .bet-summary{background:#1e212a;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px}
+  .bsr{display:flex;justify-content:space-between;padding:2px 0;color:#aaa}
+  .bsr.total{color:#3a6df0;font-weight:700;font-size:14px}
+  .bsmsg{font-size:12px;color:#888;margin-bottom:6px;line-height:1.4}
+  /* hist */
+  .hi{font-size:13px;padding:10px 0;border-bottom:1px solid #1e2130}
+  .hi:last-child{border-bottom:none}
+  .hi-top{display:flex;justify-content:space-between;gap:6px;align-items:flex-start;margin-bottom:3px}
+  .hi-legs{font-size:11px;color:#666;line-height:1.6}
+  .pill{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;white-space:nowrap;flex-shrink:0}
+  .p-win{background:#1d3a26;color:#4ade80}
+  .p-lose{background:#3a1d1d;color:#f87171}
+  .p-pend{background:#2e2a1a;color:#fbbf24}
+  /* login */
+  #loginScreen{min-height:90vh;display:flex;flex-direction:column;justify-content:center;align-items:center}
+  .lbox{width:100%;max-width:380px;text-align:center;padding:0 8px}
+  .lbox h1{font-size:34px;margin-bottom:6px}
+  .pgrid{display:flex;flex-direction:column;gap:10px;margin-top:24px}
+  .pbtn{width:100%;padding:20px;font-size:20px;font-weight:700;background:#1a1d24;border:1.5px solid #2a2e38;border-radius:14px;cursor:pointer;margin-top:0;color:#eee}
+  .pbtn.sel{border-color:#3a6df0;background:#1c2740}
+  .pinsec{margin-top:16px}
+  .pinsec input{font-size:28px;text-align:center;letter-spacing:10px;padding:14px}
+  .pinsec button{font-size:17px;padding:15px}
+  /* result form */
+  .r2{display:flex;gap:8px}
+  .r2>div{flex:1}
+  .vs-title{font-size:20px;font-weight:700;text-align:center;margin-bottom:4px}
+  .vs-sub{text-align:center;font-size:13px;color:#888;margin-bottom:14px}
+  .debt-amt{font-size:26px;font-weight:800;color:#f87171}
+  .loan-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1e2130;font-size:13px}
+  .loan-row:last-child{border-bottom:none}
+  .badge-active{background:#2e2a1a;color:#fbbf24;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px}
+  .badge-clear{background:#1d3a26;color:#4ade80;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="lbox">
+    <h1>⚽ FIFA Bets</h1>
+    <div class="sub">Casa de apuestas entre panas</div>
+    <div class="pgrid" id="playerGrid"></div>
+    <div class="pinsec hidden" id="pinSection">
+      <input type="password" id="loginPin" maxlength="4" inputmode="numeric" placeholder="••••">
+      <button onclick="login()">Entrar</button>
+      <p class="small" id="loginMsg"></p>
+      <p class="small">Primera vez → el PIN queda guardado como tuyo.</p>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="mainApp" class="hidden">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <h1>⚽ FIFA Bets</h1>
+    <button class="sec" style="width:auto;padding:6px 12px;font-size:13px;margin-top:0" onclick="logout()">
+      Salir (<span id="userLabel"></span>)
+    </button>
+  </div>
+  <div id="balsBar" class="balances"></div>
+  <div class="tabs">
+    <button data-tab="apostar" class="active">Apostar</button>
+    <button data-tab="historial">Mis apuestas</button>
+    <button data-tab="prestamos">💰 Préstamos</button>
+    <button data-tab="resultado">Resultado</button>
+  </div>
+
+  <!-- APOSTAR -->
+  <div id="tab-apostar" class="tab">
+    <div class="vs-title" id="matchTitle"></div>
+    <div class="vs-sub" id="matchSub"></div>
+    <div id="marketsContainer"></div>
+    <div style="height:110px"></div><!-- spacer for betbar -->
+  </div>
+
+  <!-- PENDIENTES (dentro de apostar, al fondo) -->
+  <div id="tab-apostar-extra" class="hidden" style="display:none"></div>
+
+  <!-- HISTORIAL -->
+  <div id="tab-historial" class="tab hidden">
+    <div class="card"><h3>Mis apuestas</h3><div id="betHistory"></div></div>
+  </div>
+
+  <!-- PRESTAMOS -->
+  <div id="tab-prestamos" class="tab hidden">
+    <div id="debtBanner" class="hidden card" style="border-color:#c0392b;background:#2a1414"></div>
+    <div class="card">
+      <h3>💰 Tu préstamo</h3>
+      <div id="loanStatus"></div>
+      <div id="loanActions"></div>
+    </div>
+    <div class="card hidden" id="retosForMeCard">
+      <h3>🎯 Retos pendientes para ti</h3>
+      <div id="retosForMe"></div>
+    </div>
+    <div class="card">
+      <h3>Proponer un reto</h3>
+      <p class="small">Si otro jugador está en deuda, puedes ponerle un reto. Si lo cumple, tú decides cuándo marcarlo como completado y eso le suma FUSD.</p>
+      <label>¿A quién?</label>
+      <select id="ch_target"></select>
+      <label>Descripción del reto</label>
+      <input type="text" id="ch_text" placeholder="ej: gana un partido sin recibir gol">
+      <label>Recompensa (FUSD)</label>
+      <input type="number" id="ch_reward" min="1" placeholder="ej: 50">
+      <button onclick="addChallenge()">Proponer reto</button>
+      <p class="small" id="chMsg"></p>
+    </div>
+    <div class="card">
+      <h3>Retos que has propuesto</h3>
+      <div id="myChallenges"></div>
+    </div>
+    <div class="card">
+      <h3>Estado de préstamos del grupo</h3>
+      <div id="allLoans"></div>
+    </div>
+  </div>
+
+  <!-- RESULTADO -->
+  <div id="tab-resultado" class="tab hidden">
+    <div id="resultLocked" class="card">
+      <h3>🔒 Solo <span id="adminLbl"></span> puede registrar resultados.</h3>
+    </div>
+    <div id="resultForm" class="hidden">
+      <div class="card">
+        <h3>Registrar resultado</h3>
+        <label>Jugador 1</label><select id="r_p1"></select>
+        <label>Jugador 2</label><select id="r_p2"></select>
+        <div class="group-label" style="margin-top:12px">Resultado final ✱</div>
+        <div class="r2">
+          <div><label>Goles J1</label><input type="number" id="r_g1" min="0"></div>
+          <div><label>Goles J2</label><input type="number" id="r_g2" min="0"></div>
+        </div>
+        <label>Posesión J1 (%)</label><input type="number" id="r_poss" min="0" max="100" placeholder="ej: 56">
+        <label>¿Quién anotó primero?</label><select id="r_first"></select>
+        <div class="group-label" style="margin-top:12px">Opcionales <span style="color:#444;font-style:italic">(déjalos en blanco si no los tienes)</span></div>
+        <div class="r2">
+          <div><label>Goles 1ª mitad J1</label><input type="number" id="r_htg1" min="0" placeholder="—"></div>
+          <div><label>Goles 1ª mitad J2</label><input type="number" id="r_htg2" min="0" placeholder="—"></div>
+        </div>
+        <div class="r2">
+          <div><label>Córners J1</label><input type="number" id="r_c1" min="0" placeholder="—"></div>
+          <div><label>Córners J2</label><input type="number" id="r_c2" min="0" placeholder="—"></div>
+        </div>
+        <div class="r2">
+          <div><label>Tiros J1</label><input type="number" id="r_s1" min="0" placeholder="—"></div>
+          <div><label>Tiros J2</label><input type="number" id="r_s2" min="0" placeholder="—"></div>
+        </div>
+        <button onclick="registerResult()" style="margin-top:14px">Guardar y liquidar apuestas</button>
+        <p class="small" id="resultMsg"></p>
+      </div>
+      <div class="card"><h3>Historial de partidos</h3><div id="matchHistory"></div></div>
+      <div class="card"><h3>Apuestas pendientes (todas)</h3><div id="allPending"></div></div>
+      <div class="card"><button class="danger" onclick="resetAll()">Reiniciar todo</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- BETBAR (fixed) -->
+<div class="betbar" id="betbar">
+  <div class="bet-summary hidden" id="betSummary"></div>
+  <div class="bsmsg" id="betMsg2">Selecciona una o más apuestas ↑</div>
+  <div class="betbar-row">
+    <input type="number" id="betAmt" placeholder="Monto FUSD" min="1">
+    <button onclick="placeBet()">Apostar</button>
+  </div>
+  <p class="small" id="betMsg" style="margin-top:6px"></p>
+</div>
+
+<script>
+const DB_URL="https://fifa-bets-9f1dd-default-rtdb.firebaseio.com";
+const PLAYERS=["Sasa","Simin","Jorgito"];
+const START=100;
+const ADMIN="Simin";
+
+// ─── Market config ───────────────────────────────────────────────────────────
+const MARKETS=[
+  {id:"winner",      lbl:"Ganador del partido",         type:"1X2", note:""},
+  {id:"halftime",    lbl:"Resultado al descanso",       type:"1X2", note:"⚠ Requiere goles 1ª mitad"},
+  {id:"dchance",     lbl:"Doble oportunidad",           type:"DC",  note:""},
+  {id:"goals",       lbl:"Total goles — Línea 2.5",     type:"OU",  note:""},
+  {id:"btts",        lbl:"Ambos equipos anotan",        type:"YN",  note:""},
+  {id:"firstgoal",   lbl:"¿Quién anota primero?",       type:"12N", note:""},
+  {id:"possession",  lbl:"Más posesión del balón",      type:"12",  note:""},
+  {id:"corners",     lbl:"Más córners",                 type:"12",  note:"⚠ Requiere datos de córners"},
+  {id:"shots",       lbl:"Más tiros a puerta",          type:"12",  note:"⚠ Requiere datos de tiros"},
+];
+const GROUPS=[
+  {lbl:"📊 Resultado", ids:["winner","halftime","dchance"]},
+  {lbl:"⚽ Goles",     ids:["goals","btts","firstgoal"]},
+  {lbl:"📈 Stats",     ids:["possession","corners","shots"]},
+];
+
+function getOutcomes(type,X,Y){
+  return type==="1X2"?[X,"Empate",Y]
+        :type==="DC" ?[`${X}/Emp`,`${X}/${Y}`,`Emp/${Y}`]
+        :type==="OU" ?["Over","Under"]
+        :type==="YN" ?["Sí","No"]
+        :type==="12N"?[X,Y,"Nadie"]
+                     :[X,Y];
+}
+function dispOut(o,X,Y){
+  const m={"Over":"Más de 2.5 ⬆","Under":"Menos de 2.5 ⬇","Sí":"Sí ✓","No":"No ✗","Nadie":"Nadie (0-0)","Empate":"Empate"};
+  if(m[o]) return m[o];
+  if(o===`${X}/Emp`) return `${X} o Emp`;
+  if(o===`${X}/${Y}`) return `${X} o ${Y}`;
+  if(o===`Emp/${Y}`) return `Emp o ${Y}`;
+  return o;
+}
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let state={balances:{},matches:[],bets:[],pins:{},loans:{},challenges:[]};
+let currentUser=null, selectedPlayer=null;
+let selection=[]; // [{marketId,outcome}]
+
+const LOAN_MAX=300;
+const LOAN_INTEREST=0.20;
+
+// ─── Firebase ────────────────────────────────────────────────────────────────
+async function loadState(){
+  try{const r=await fetch(`${DB_URL}/fifa_state.json`);const d=await r.json();if(d)state=d;}catch(e){}
+  PLAYERS.forEach(p=>{if(!(p in state.balances))state.balances[p]=START;});
+  ["pins","matches","bets","loans","challenges"].forEach(k=>{if(!state[k])state[k]=(k==="pins"||k==="loans")?{}:[];});
+}
+async function saveState(){
+  try{await fetch(`${DB_URL}/fifa_state.json`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(state)});}catch(e){}
+}
+async function hashPin(p){
+  const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("fifa_salt_"+p));
+  return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+
+// ─── Seed data & odds ────────────────────────────────────────────────────────
+// Pythagorean: prob(X) = X_goals² / (X_goals² + Y_goals²)
+//
+// Simin vs Jorgito: goles 230-197, pos 56%-41%
+//   pyth_Simin = 230²/(230²+197²) = 52900/91709 = 0.577  |  pos_Simin = 56/97 = 0.577
+//   base_Simin = 0.70*0.577 + 0.30*0.577 = 0.577
+//
+// Sasa vs Jorgito: goles 558-415, pos 48%-51%
+//   pyth_Sasa  = 558²/(558²+415²) = 311364/483589 = 0.644  |  pos_Sasa = 48/99 = 0.485
+//   base_Sasa  = 0.70*0.644 + 0.30*0.485 = 0.597 (redondeado 0.60)
+//
+// Sasa vs Simin: goles 100-100, pos 43%-56%
+//   pyth = 0.500 (igual)  |  pos_Sasa = 43/99 = 0.434
+//   base_Sasa  = 0.50*0.500 + 0.50*0.434 = 0.467  →  Simin favorito
+//
+// drawRate bajo (FIFA competitivo entre panas: empates <7%)
+// firstBase proporcional al base * 0.93 (7% de prob 0-0)
+
+function getSeed(X,Y){
+  const p=[X,Y].sort().join("-");
+  const J_Si="Jorgito-Simin", J_Sa="Jorgito-Sasa", Sa_Si="Sasa-Simin";
+
+  // Simin vs Jorgito — Simin CLARO favorito
+  if(p===J_Si){
+    const s=X==="Simin";
+    const base=s?0.577:0.423;
+    const fb=base*0.93, fbY=(1-base)*0.93, nb=0.07;
+    return{w:10,dr:0.06,base,pos:s?0.577:0.423,fb,fbY,nb,ov:0.72,bt:0.74,ht:s?0.54:0.46,hdr:0.08,co:s?0.58:0.42,sh:s?0.58:0.42};
+  }
+
+  // Sasa vs Jorgito — Sasa FAVORITO claro (goles 558 vs 415)
+  if(p===J_Sa){
+    const s=X==="Sasa";
+    const base=s?0.60:0.40;
+    const fb=base*0.93, fbY=(1-base)*0.93, nb=0.07;
+    return{w:12,dr:0.06,base,pos:s?0.485:0.515,fb,fbY,nb,ov:0.73,bt:0.76,ht:s?0.58:0.42,hdr:0.08,co:s?0.50:0.50,sh:s?0.61:0.39};
+  }
+
+  // Sasa vs Simin — Simin ligeramente favorito (posesión > goles iguales)
+  if(p===Sa_Si){
+    const s=X==="Sasa";
+    const base=s?0.467:0.533;
+    const fb=base*0.93, fbY=(1-base)*0.93, nb=0.07;
+    return{w:6,dr:0.08,base,pos:s?0.434:0.566,fb,fbY,nb,ov:0.65,bt:0.68,ht:s?0.44:0.56,hdr:0.10,co:s?0.40:0.60,sh:s?0.47:0.53};
+  }
+
+  return{w:2,dr:0.15,base:0.5,pos:0.5,fb:0.44,fbY:0.44,nb:0.12,ov:0.5,bt:0.6,ht:0.5,hdr:0.15,co:0.5,sh:0.5};
+}
+
+function computeProbs(X,Y){
+  const sd=getSeed(X,Y);
+  const gs=state.matches.filter(m=>(m.p1===X&&m.p2===Y)||(m.p1===Y&&m.p2===X));
+  let wX=0,wY=0,dr=0,ov=0,posX=0,fX=0,fY=0,fN=0,bt=0,htX=0,htY=0,htD=0,htN=0,cX=0,cY=0,cN=0,sX=0,sY=0,sN=0;
+  const tn=v=>{const n=parseInt(v);return isNaN(n)?null:n;};
+  gs.forEach(m=>{
+    const gX=m.p1===X?m.g1:m.g2,gY=m.p1===X?m.g2:m.g1;
+    const pX=m.p1===X?m.poss:(100-m.poss);
+    if(gX>gY)wX++;else if(gY>gX)wY++;else dr++;
+    if((gX+gY)>2.5)ov++;
+    if(pX>50)posX++;
+    if(m.first===X)fX++;else if(m.first===Y)fY++;else fN++;
+    if(gX>0&&gY>0)bt++;
+    const h1=tn(m.htg1),h2=tn(m.htg2);
+    if(h1!==null&&h2!==null){const hX=m.p1===X?h1:h2,hY=m.p1===X?h2:h1;if(hX>hY)htX++;else if(hY>hX)htY++;else htD++;htN++;}
+    const c1=tn(m.c1),c2=tn(m.c2);
+    if(c1!==null&&c2!==null){const cXv=m.p1===X?c1:c2,cYv=m.p1===X?c2:c1;if(cXv>cYv)cX++;else cY++;cN++;}
+    const s1=tn(m.s1),s2=tn(m.s2);
+    if(s1!==null&&s2!==null){const sXv=m.p1===X?s1:s2,sYv=m.p1===X?s2:s1;if(sXv>sYv)sX++;else sY++;sN++;}
+  });
+  const n=gs.length,tot=sd.w+n;
+  const htT=sd.w*.6+htN, cT=sd.w*.5+cN, sT=sd.w*.5+sN;
+  const pX=(sd.w*sd.base*(1-sd.dr)+wX)/tot;
+  const pY=(sd.w*(1-sd.base)*(1-sd.dr)+wY)/tot;
+  const pE=(sd.w*sd.dr+dr)/tot;
+  const pHX=(sd.w*.6*sd.ht*(1-sd.hdr)+htX)/htT;
+  const pHY=(sd.w*.6*(1-sd.ht)*(1-sd.hdr)+htY)/htT;
+  const pHE=(sd.w*.6*sd.hdr+htD)/htT;
+  const pOv=(sd.w*sd.ov+ov)/tot;
+  const pBt=(sd.w*sd.bt+bt)/tot;
+  const pPo=(sd.w*sd.pos+posX)/tot;
+  const pFX=(sd.w*sd.fb+fX)/tot,pFY=(sd.w*(sd.fbY??sd.fb)+fY)/tot,pFN=(sd.w*sd.nb+fN)/tot;
+  const pCX=(sd.w*.5*sd.co+cX)/cT;
+  const pSX=(sd.w*.5*sd.sh+sX)/sT;
+  const d1=`${X}/Emp`,d2=`${X}/${Y}`,d3=`Emp/${Y}`;
+  return{
+    winner:{[X]:pX,Empate:pE,[Y]:pY},
+    halftime:{[X]:pHX,Empate:pHE,[Y]:pHY},
+    dchance:{[d1]:pX+pE,[d2]:pX+pY,[d3]:pE+pY},
+    goals:{Over:pOv,Under:1-pOv},
+    btts:{Sí:pBt,No:1-pBt},
+    firstgoal:{[X]:pFX,[Y]:pFY,Nadie:pFN},
+    possession:{[X]:pPo,[Y]:1-pPo},
+    corners:{[X]:pCX,[Y]:1-pCX},
+    shots:{[X]:pSX,[Y]:1-pSX},
+  };
+}
+
+function getOdds(X,Y){
+  const pr=computeProbs(X,Y),od={};
+  Object.keys(pr).forEach(m=>{od[m]={};Object.keys(pr[m]).forEach(o=>{od[m][o]=parseFloat(Math.max(1.05,1/pr[m][o]).toFixed(2));});});
+  return od;
+}
+
+function getMatchup(){const o=PLAYERS.filter(p=>p!==currentUser);return{X:o[0],Y:o[1]};}
+
+// ─── Login ───────────────────────────────────────────────────────────────────
+function buildLogin(){
+  const g=document.getElementById("playerGrid");
+  g.innerHTML=PLAYERS.map(p=>`<button class="pbtn" data-player="${p}">${p}</button>`).join("");
+  g.querySelectorAll(".pbtn").forEach(b=>b.addEventListener("click",()=>{
+    selectedPlayer=b.dataset.player;
+    g.querySelectorAll(".pbtn").forEach(x=>x.classList.toggle("sel",x===b));
+    document.getElementById("pinSection").classList.remove("hidden");
+    document.getElementById("loginPin").value="";
+    document.getElementById("loginMsg").textContent="";
+    document.getElementById("loginPin").focus();
+  }));
+}
+
+async function login(){
+  const msg=document.getElementById("loginMsg");
+  if(!selectedPlayer){msg.textContent="Selecciona tu nombre.";return;}
+  const pin=document.getElementById("loginPin").value;
+  if(!/^\d{4}$/.test(pin)){msg.textContent="El PIN debe ser de 4 dígitos.";return;}
+  await loadState();
+  const h=await hashPin(pin);
+  if(!state.pins[selectedPlayer]){state.pins[selectedPlayer]=h;await saveState();}
+  else if(state.pins[selectedPlayer]!==h){msg.textContent="PIN incorrecto ❌";return;}
+  currentUser=selectedPlayer;
+  document.getElementById("loginScreen").classList.add("hidden");
+  document.getElementById("mainApp").classList.remove("hidden");
+  document.getElementById("userLabel").textContent=currentUser;
+  selection=[];render();
+}
+
+function logout(){
+  currentUser=null;selectedPlayer=null;selection=[];
+  document.getElementById("loginPin").value="";
+  document.getElementById("pinSection").classList.add("hidden");
+  document.querySelectorAll(".pbtn").forEach(b=>b.classList.remove("sel"));
+  document.getElementById("mainApp").classList.add("hidden");
+  document.getElementById("loginScreen").classList.remove("hidden");
+}
+
+// ─── Markets ─────────────────────────────────────────────────────────────────
+function buildMarketsHTML(X,Y,odds){
+  return GROUPS.map(g=>`
+    <div class="group-label">${g.lbl}</div>
+    ${g.ids.map(mid=>{
+      const mkt=MARKETS.find(m=>m.id===mid);
+      const outs=getOutcomes(mkt.type,X,Y);
+      return `<div class="card" style="margin-bottom:8px">
+        <h4>${mkt.lbl}</h4>
+        ${mkt.note?`<div class="note">${mkt.note}</div>`:""}
+        <div class="outcomes">
+          ${outs.map(o=>{
+            const isSel=selection.some(s=>s.marketId===mid&&s.outcome===o);
+            return `<div class="ob${isSel?" sel":""}" data-m="${mid}" data-o="${o}">
+              <span class="lbl">${dispOut(o,X,Y)}</span>
+              <span class="odd">x${odds[mid][o].toFixed(2)}</span>
+            </div>`;
+          }).join("")}
+        </div>
+      </div>`;
+    }).join("")}`
+  ).join("");
+}
+
+function renderMarkets(){
+  if(!currentUser)return;
+  const{X,Y}=getMatchup();
+  document.getElementById("matchTitle").textContent=`${X} vs ${Y}`;
+  document.getElementById("matchSub").textContent=`Tú apostás como ${currentUser}`;
+  const odds=getOdds(X,Y);
+  const c=document.getElementById("marketsContainer");
+  c.innerHTML=buildMarketsHTML(X,Y,odds);
+  c.querySelectorAll(".ob").forEach(b=>b.addEventListener("click",()=>toggleSel(b.dataset.m,b.dataset.o)));
+}
+
+function toggleSel(mid,out){
+  const idx=selection.findIndex(s=>s.marketId===mid&&s.outcome===out);
+  if(idx>=0){selection.splice(idx,1);}
+  else{
+    selection=selection.filter(s=>s.marketId!==mid);
+    if(selection.length>=5)return;
+    selection.push({marketId:mid,outcome:out});
+  }
+  renderMarkets();
+  updateBetBar();
+}
+
+function updateBetBar(){
+  const info=document.getElementById("betMsg2");
+  const sumEl=document.getElementById("betSummary");
+  if(!selection.length){info.textContent="Selecciona una o más apuestas ↑";sumEl.classList.add("hidden");return;}
+  const{X,Y}=getMatchup();
+  const odds=getOdds(X,Y);
+  let tot=1,rows="";
+  selection.forEach(s=>{
+    const m=MARKETS.find(x=>x.id===s.marketId);
+    const o=odds[s.marketId][s.outcome];
+    tot*=o;
+    rows+=`<div class="bsr"><span>${m.lbl}: ${dispOut(s.outcome,X,Y)}</span><span>x${o.toFixed(2)}</span></div>`;
+  });
+  tot=parseFloat(tot.toFixed(2));
+  sumEl.classList.remove("hidden");
+  sumEl.innerHTML=rows+(selection.length>1?`<div class="bsr total"><span>Cuota combinada</span><span>x${tot.toFixed(2)}</span></div>`:"");
+  info.textContent=selection.length>1?`Combinada de ${selection.length} patas — x${tot.toFixed(2)}`:"";
+}
+
+// ─── Bet placement ────────────────────────────────────────────────────────────
+async function placeBet(){
+  const msg=document.getElementById("betMsg");
+  if(!currentUser)return;
+  if(!selection.length){msg.textContent="Selecciona al menos una opción.";return;}
+  const amt=parseFloat(document.getElementById("betAmt").value);
+  if(!amt||amt<=0){msg.textContent="Ingresa un monto válido.";return;}
+  await loadState();
+  if(state.balances[currentUser]<=0){msg.textContent="❌ Estás en deuda — no puedes apostar hasta recuperarte con retos en la pestaña Préstamos.";return;}
+  if(amt>state.balances[currentUser]){msg.textContent="No tienes saldo suficiente.";return;}
+  // Interés de préstamo: cada apuesta colocada con préstamo activo suma 20% al monto adeudado
+  const loan=state.loans[currentUser];
+  if(loan&&loan.active){
+    const interest=loan.owed*LOAN_INTEREST;
+    loan.owed=parseFloat((loan.owed+interest).toFixed(2));
+    state.balances[currentUser]=parseFloat((state.balances[currentUser]-interest).toFixed(2));
+  }
+  const{X,Y}=getMatchup();
+  const odds=getOdds(X,Y);
+  let tot=1;
+  const legs=selection.map(s=>{const o=odds[s.marketId][s.outcome];tot*=o;return{market:s.marketId,outcome:s.outcome,odds:o};});
+  tot=parseFloat(tot.toFixed(2));
+  state.balances[currentUser]-=amt;
+  state.bets.push({bettor:currentUser,p1:X,p2:Y,legs,amount:amt,totalOdds:tot,resolved:false,won:null,ts:Date.now()});
+  await saveState();
+  let interestMsg=loan&&loan.active?` (préstamo: +20% interés, ahora debes ${loan.owed.toFixed(0)} FUSD)`:"";
+  msg.textContent=`✅ Apuesta hecha — cuota x${tot.toFixed(2)}, ganancia potencial: ${(amt*tot).toFixed(0)} FUSD${interestMsg}`;
+  document.getElementById("betAmt").value="";
+  selection=[];render();
+}
+
+// ─── Préstamos ───────────────────────────────────────────────────────────────
+async function requestLoan(){
+  const msg=document.getElementById("loanMsg");
+  const amt=parseFloat(document.getElementById("loanAmt").value);
+  await loadState();
+  if(state.loans[currentUser]&&state.loans[currentUser].active){msg.textContent="Ya tienes un préstamo activo. Págalo antes de pedir otro.";return;}
+  if(!amt||amt<=0){msg.textContent="Ingresa un monto válido.";return;}
+  if(amt>LOAN_MAX){msg.textContent=`El máximo es ${LOAN_MAX} FUSD.`;return;}
+  state.loans[currentUser]={owed:amt,active:true};
+  state.balances[currentUser]=parseFloat((state.balances[currentUser]+amt).toFixed(2));
+  await saveState();
+  msg.textContent=`✅ Préstamo de ${amt} FUSD recibido. Recuerda: cada apuesta que hagas suma 20% de interés a tu deuda hasta que la pagues completa.`;
+  render();
+}
+
+async function payLoan(){
+  const msg=document.getElementById("loanMsg");
+  const amt=parseFloat(document.getElementById("payAmt").value);
+  await loadState();
+  const loan=state.loans[currentUser];
+  if(!loan||!loan.active){msg.textContent="No tienes ningún préstamo activo.";return;}
+  if(!amt||amt<=0){msg.textContent="Ingresa un monto válido.";return;}
+  if(state.balances[currentUser]<=0){msg.textContent="No puedes pagar con saldo negativo — recupérate con retos primero.";return;}
+  const pay=Math.min(amt,loan.owed,state.balances[currentUser]);
+  state.balances[currentUser]=parseFloat((state.balances[currentUser]-pay).toFixed(2));
+  loan.owed=parseFloat((loan.owed-pay).toFixed(2));
+  if(loan.owed<=0){loan.owed=0;loan.active=false;}
+  await saveState();
+  msg.textContent=loan.active?`✅ Pagaste ${pay.toFixed(0)} FUSD. Aún debes ${loan.owed.toFixed(0)} FUSD.`:`🎉 ¡Préstamo pagado por completo!`;
+  document.getElementById("payAmt").value="";
+  render();
+}
+
+function fillChallengeTarget(){
+  const sel=document.getElementById("ch_target");
+  if(!sel)return;
+  const others=PLAYERS.filter(p=>p!==currentUser);
+  sel.innerHTML=others.map(p=>`<option value="${p}">${p}</option>`).join("");
+}
+
+async function addChallenge(){
+  const msg=document.getElementById("chMsg");
+  const target=document.getElementById("ch_target").value;
+  const text=document.getElementById("ch_text").value.trim();
+  const reward=parseFloat(document.getElementById("ch_reward").value);
+  if(!target||target===currentUser){msg.textContent="Elige a otro jugador.";return;}
+  if(!text){msg.textContent="Escribe una descripción del reto.";return;}
+  if(!reward||reward<=0){msg.textContent="Ingresa una recompensa válida.";return;}
+  await loadState();
+  state.challenges.push({id:Date.now()+"_"+Math.random().toString(36).slice(2,7),target,by:currentUser,text,reward,completed:false,ts:Date.now()});
+  await saveState();
+  msg.textContent="✅ Reto propuesto.";
+  document.getElementById("ch_text").value="";
+  document.getElementById("ch_reward").value="";
+  render();
+}
+
+async function completeChallenge(id){
+  await loadState();
+  const ch=state.challenges.find(c=>c.id===id);
+  if(!ch||ch.completed)return;
+  if(ch.by!==currentUser&&currentUser!==ADMIN){alert("Solo quien propuso el reto (o "+ADMIN+") puede marcarlo como completado.");return;}
+  ch.completed=true;
+  state.balances[ch.target]=parseFloat((state.balances[ch.target]+ch.reward).toFixed(2));
+  await saveState();
+  render();
+}
+
+// ─── Result registration ──────────────────────────────────────────────────────
+function fillResultSelects(){
+  ["r_p1","r_p2"].forEach(id=>{document.getElementById(id).innerHTML=PLAYERS.map(p=>`<option value="${p}">${p}</option>`).join("");});
+  document.getElementById("r_p1").value=PLAYERS[0];
+  document.getElementById("r_p2").value=PLAYERS[1];
+  ["r_p1","r_p2"].forEach(id=>document.getElementById(id).addEventListener("change",fixP2));
+  updFirst();
+}
+function fixP2(){
+  const v1=document.getElementById("r_p1").value,el=document.getElementById("r_p2");
+  if(el.value===v1)el.value=PLAYERS.find(p=>p!==v1);
+  updFirst();
+}
+function updFirst(){
+  const p1=document.getElementById("r_p1").value,p2=document.getElementById("r_p2").value;
+  document.getElementById("r_first").innerHTML=
+    `<option value="${p1}">${p1}</option><option value="${p2}">${p2}</option><option value="Nadie">Nadie (0-0)</option>`;
+}
+
+// tobet: translate result's player name to bet's player name
+function tobet(name,rp1,rp2,bp1,bp2){
+  if(name===rp1)return bp1===rp1?bp1:bp2;
+  if(name===rp2)return bp1===rp2?bp1:bp2;
+  return name; // Empate, Nadie
+}
+
+function resolveLeg(leg,b,result,rp1,rp2){
+  const{market:m,outcome:o}=leg;
+  if(m==="dchance"){
+    if(!("winner" in result))return null;
+    const w=tobet(result.winner,rp1,rp2,b.p1,b.p2);
+    if(o===`${b.p1}/Emp`)return w===b.p1||w==="Empate";
+    if(o===`${b.p1}/${b.p2}`)return w===b.p1||w===b.p2;
+    if(o===`Emp/${b.p2}`)return w==="Empate"||w===b.p2;
+    return false;
+  }
+  if(!(m in result))return null;
+  return tobet(result[m],rp1,rp2,b.p1,b.p2)===o;
+}
+
+async function registerResult(){
+  if(currentUser!==ADMIN){alert(`Solo ${ADMIN} puede registrar resultados.`);return;}
+  const p1=document.getElementById("r_p1").value,p2=document.getElementById("r_p2").value;
+  if(p1===p2){document.getElementById("resultMsg").textContent="Jugadores distintos por favor.";return;}
+  const g1=parseInt(document.getElementById("r_g1").value),g2=parseInt(document.getElementById("r_g2").value);
+  const poss=parseFloat(document.getElementById("r_poss").value),first=document.getElementById("r_first").value;
+  const msg=document.getElementById("resultMsg");
+  if(isNaN(g1)||isNaN(g2)){msg.textContent="Ingresa los goles.";return;}
+  if(isNaN(poss)||poss<0||poss>100){msg.textContent="Posesión J1 inválida (0-100).";return;}
+  const opt=id=>{const v=document.getElementById(id).value;return v===""?null:parseInt(v);};
+  const htg1=opt("r_htg1"),htg2=opt("r_htg2"),c1=opt("r_c1"),c2=opt("r_c2"),s1=opt("r_s1"),s2=opt("r_s2");
+  await loadState();
+  const result={};
+  result.winner=g1>g2?p1:(g2>g1?p2:"Empate");
+  result.goals=(g1+g2)>2.5?"Over":"Under";
+  result.btts=(g1>0&&g2>0)?"Sí":"No";
+  result.possession=poss>50?p1:p2;
+  result.firstgoal=first;
+  if(htg1!==null&&htg2!==null&&!isNaN(htg1)&&!isNaN(htg2))
+    result.halftime=htg1>htg2?p1:(htg2>htg1?p2:"Empate");
+  if(c1!==null&&c2!==null&&!isNaN(c1)&&!isNaN(c2))
+    result.corners=c1>c2?p1:p2;
+  if(s1!==null&&s2!==null&&!isNaN(s1)&&!isNaN(s2))
+    result.shots=s1>s2?p1:p2;
+  state.matches.push({p1,p2,g1,g2,poss,first,htg1,htg2,c1,c2,s1,s2,ts:Date.now()});
+  let resolved=0;
+  state.bets.forEach(b=>{
+    if(b.resolved)return;
+    if(!((b.p1===p1&&b.p2===p2)||(b.p1===p2&&b.p2===p1)))return;
+    const canResolve=b.legs.every(leg=>resolveLeg(leg,b,result,p1,p2)!==null);
+    if(!canResolve)return;
+    b.resolved=true;resolved++;
+    const allWon=b.legs.every(leg=>resolveLeg(leg,b,result,p1,p2)===true);
+    b.won=allWon;
+    if(allWon)state.balances[b.bettor]+=b.amount*b.totalOdds;
+  });
+  await saveState();
+  const still=state.bets.filter(b=>!b.resolved&&((b.p1===p1&&b.p2===p2)||(b.p1===p2&&b.p2===p1))).length;
+  msg.textContent=`✅ ${p1} ${g1}-${g2} ${p2} guardado. ${resolved} apuesta(s) liquidada(s).${still?` (${still} pendiente(s) por datos opcionales)`:""}`;
+  ["r_g1","r_g2","r_poss","r_htg1","r_htg2","r_c1","r_c2","r_s1","r_s2"].forEach(id=>document.getElementById(id).value="");
+  render();
+}
+
+function resetAll(){
+  if(!confirm("¿Seguro? Borra todo el historial y reinicia saldos."))return;
+  state={balances:{},matches:[],bets:[],pins:state.pins,loans:{},challenges:[]};
+  PLAYERS.forEach(p=>state.balances[p]=START);
+  saveState();render();
+}
+
+// ─── Render Préstamos ──────────────────────────────────────────────────────────
+function renderPrestamos(){
+  if(!currentUser)return;
+  fillChallengeTarget();
+  const bal=state.balances[currentUser];
+  const loan=state.loans[currentUser];
+  const inDebt=bal<0;
+
+  // Banner de deuda
+  const banner=document.getElementById("debtBanner");
+  if(inDebt){
+    banner.classList.remove("hidden");
+    banner.innerHTML=`<h3 style="color:#f87171">🚨 Estás en deuda</h3><div class="debt-amt">${bal.toFixed(0)} FUSD</div><p class="small">No puedes apostar hasta recuperarte. Pide a otros jugadores que te propongan retos abajo, o complétalos si ya tienes alguno pendiente.</p>`;
+  } else {
+    banner.classList.add("hidden");
+  }
+
+  // Estado de mi préstamo + acciones
+  const statusEl=document.getElementById("loanStatus");
+  const actionsEl=document.getElementById("loanActions");
+  if(loan&&loan.active){
+    statusEl.innerHTML=`<div class="loan-row"><span>Debes actualmente</span><span class="debt-amt" style="font-size:18px">${loan.owed.toFixed(0)} FUSD</span></div>
+      <p class="small">⚠ Cada apuesta que hagas mientras tengas este préstamo activo suma un 20% de interés a tu deuda. Págalo cuanto antes.</p>`;
+    actionsEl.innerHTML=`<label>Pagar préstamo (FUSD)</label>
+      <input type="number" id="payAmt" min="1" placeholder="ej: 50">
+      <button onclick="payLoan()">Pagar</button>
+      <p class="small" id="loanMsg"></p>`;
+  } else {
+    statusEl.innerHTML=`<p class="small">No tienes ningún préstamo activo.</p>`;
+    actionsEl.innerHTML=`<label>Pedir préstamo (máx ${LOAN_MAX} FUSD)</label>
+      <input type="number" id="loanAmt" min="1" max="${LOAN_MAX}" placeholder="ej: 100">
+      <button onclick="requestLoan()">Pedir préstamo</button>
+      <p class="small" id="loanMsg"></p>`;
+  }
+
+  // Retos pendientes para mí
+  const myPending=state.challenges.filter(c=>c.target===currentUser&&!c.completed);
+  const retosCard=document.getElementById("retosForMeCard");
+  if(myPending.length){
+    retosCard.classList.remove("hidden");
+    document.getElementById("retosForMe").innerHTML=myPending.map(c=>
+      `<div class="hi"><div class="hi-top"><span>${c.text}</span><span class="pill p-pend">+${c.reward} FUSD</span></div><div class="hi-legs">Propuesto por ${c.by}</div></div>`
+    ).join("");
+  } else {
+    retosCard.classList.add("hidden");
+  }
+
+  // Retos que yo propuse
+  const mine=state.challenges.filter(c=>c.by===currentUser).reverse();
+  document.getElementById("myChallenges").innerHTML=mine.length?mine.map(c=>{
+    if(c.completed){
+      return `<div class="hi"><div class="hi-top"><span>${c.target}: ${c.text}</span><span class="pill p-win">✅ +${c.reward}</span></div></div>`;
+    }
+    return `<div class="hi"><div class="hi-top"><span>${c.target}: ${c.text}</span><span class="pill p-pend">+${c.reward} FUSD</span></div>
+      <button class="sec" style="margin-top:6px" onclick="completeChallenge('${c.id}')">Marcar como completado</button></div>`;
+  }).join(""):"<p class='small'>No has propuesto retos.</p>";
+
+  // Estado de préstamos del grupo
+  document.getElementById("allLoans").innerHTML=PLAYERS.map(p=>{
+    const l=state.loans[p];
+    const b=state.balances[p];
+    const badge=l&&l.active?`<span class="badge-active">Debe ${l.owed.toFixed(0)} FUSD</span>`:`<span class="badge-clear">Sin deuda</span>`;
+    const neg=b<0?` · <span style="color:#f87171">saldo ${b.toFixed(0)}</span>`:"";
+    return `<div class="loan-row"><span>${p}${neg}</span>${badge}</div>`;
+  }).join("");
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function render(){
+  if(!currentUser)return;
+  const sorted=[...PLAYERS].sort((a,b)=>state.balances[b]-state.balances[a]);
+  document.getElementById("balsBar").innerHTML=PLAYERS.map(p=>`
+    <div class="bal ${p===currentUser?"active":""}">
+      <div class="name">${p}${sorted[0]===p?" 👑":""}</div>
+      <div class="amt">${state.balances[p].toFixed(0)}</div>
+    </div>`).join("");
+  renderMarkets();
+  updateBetBar();
+  renderPrestamos();
+  // Historial
+  const mine=[...state.bets].filter(b=>b.bettor===currentUser).reverse();
+  const{X,Y}=getMatchup();
+  document.getElementById("betHistory").innerHTML=mine.length?mine.map(b=>{
+    let cls="p-pend",lbl="⏳ Pendiente";
+    if(b.resolved){cls=b.won?"p-win":"p-lose";lbl=b.won?`✅ +${(b.amount*b.totalOdds).toFixed(0)} FUSD`:`❌ -${b.amount} FUSD`;}
+    const legs=b.legs.map(l=>{const m=MARKETS.find(x=>x.id===l.market);return`${m.lbl}: ${l.outcome} (x${l.odds.toFixed(2)})`;}).join(" · ");
+    return`<div class="hi"><div class="hi-top"><span>${b.p1} vs ${b.p2} — ${b.amount} FUSD${b.legs.length>1?" (combinada)":""} x${b.totalOdds.toFixed(2)}</span><span class="pill ${cls}">${lbl}</span></div><div class="hi-legs">${legs}</div></div>`;
+  }).join(""):"<p class='small'>Aún no has hecho apuestas.</p>";
+  // Resultado tab
+  document.getElementById("adminLbl").textContent=ADMIN;
+  document.getElementById("resultLocked").classList.toggle("hidden",currentUser===ADMIN);
+  document.getElementById("resultForm").classList.toggle("hidden",currentUser!==ADMIN);
+  if(currentUser===ADMIN){
+    // Match history
+    document.getElementById("matchHistory").innerHTML=state.matches.length?
+      [...state.matches].reverse().map(m=>{
+        const ex=[];
+        if(m.htg1!==null&&m.htg1!==undefined)ex.push(`HT ${m.htg1}-${m.htg2}`);
+        if(m.c1!==null&&m.c1!==undefined)ex.push(`Córners ${m.c1}-${m.c2}`);
+        if(m.s1!==null&&m.s1!==undefined)ex.push(`Tiros ${m.s1}-${m.s2}`);
+        return`<div class="hi"><div class="hi-top"><b>${m.p1} ${m.g1}-${m.g2} ${m.p2}</b><span class="small">Pos.J1 ${m.poss}%</span></div><div class="hi-legs">1er gol: ${m.first}${ex.length?" · "+ex.join(" · "):""}</div></div>`;
+      }).join(""):"<p class='small'>Sin partidos registrados.</p>";
+    // All pending bets
+    const pend=state.bets.filter(b=>!b.resolved);
+    document.getElementById("allPending").innerHTML=pend.length?pend.map(b=>{
+      const legs=b.legs.map(l=>l.outcome).join(" + ");
+      return`<div class="hi"><div class="hi-top"><span>${b.bettor}: ${b.amount} FUSD — ${b.p1} vs ${b.p2}</span><span class="pill p-pend">x${b.totalOdds.toFixed(2)}</span></div><div class="hi-legs">${legs}</div></div>`;
+    }).join(""):"<p class='small'>No hay apuestas pendientes.</p>";
+  }
+}
+
+// ─── Tabs ────────────────────────────────────────────────────────────────────
+document.querySelectorAll(".tabs button").forEach(btn=>btn.addEventListener("click",()=>{
+  document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  document.querySelectorAll(".tab").forEach(t=>t.classList.add("hidden"));
+  document.getElementById("tab-"+btn.dataset.tab).classList.remove("hidden");
+  // show/hide betbar only on apostar tab
+  document.getElementById("betbar").classList.toggle("hidden",btn.dataset.tab!=="apostar");
+}));
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+(async function init(){
+  buildLogin();
+  fillResultSelects();
+  await loadState();
+  setInterval(async()=>{if(currentUser){await loadState();render();}},6000);
+})();
+</script>
+</body>
+</html>
